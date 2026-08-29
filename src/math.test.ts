@@ -143,10 +143,11 @@ describe("complex / matrix primitives", () => {
     }
   });
 
-  it("Planck compactification: Möbius = tanh(½ log), and inversion is a sign flip", () => {
+  it("Identity 1: Cayley Möbius = tanh(½ log); Identity 2 is extra", () => {
     const rng = mulberry32(11);
     for (let i = 0; i < 64; i++) {
       const u = (rng() * 2 - 1) * 12;
+      if (Math.abs(u) < 1e-12) continue;
       const z = Math.exp(u);
       const t = planckCompact(u);
       nearly(t, planckRational(z), 1e-12);
@@ -154,13 +155,18 @@ describe("complex / matrix primitives", () => {
       nearly(t, (Math.exp(u) - 1) / (Math.exp(u) + 1), 1e-12);
       const w = 1 / z;
       nearly(t, (1 - w) / (1 + w), 1e-12);
-      nearly(planckCompact(-u), -t, 1e-12);
-      nearly(planckRational(1 / z), -t, 1e-12);
     }
     nearly(planckCompact(0), 0);
     assert.ok(planckCompact(-8) < -0.9);
     assert.ok(planckCompact(8) > 0.9);
     assert.ok(Math.abs(Math.tanh(1) - Math.tanh(0.5)) > 1e-3, "dropping ½ is a different map");
+
+    const u = 1.3;
+    const cayley = planckCompact(u);
+    const illegal = Math.tanh(u);
+    nearly(planckCompact(-u), -cayley, 1e-12);
+    nearly(Math.tanh(-u), -illegal, 1e-12);
+    assert.ok(Math.abs(illegal - cayley) > 1e-3, "oddness holds for tanh(u), so it cannot certify Identity 1");
   });
 
   it("Weyl ordering identities on the truncated oscillator", () => {

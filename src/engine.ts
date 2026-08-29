@@ -72,7 +72,7 @@ export const FAMILIES: FamilyMeta[] = [
     index: "08",
     name: "Planck chart",
     symbol: "ℓ_P",
-    blurb: "Microscopic 0 ↔ macroscopic ∞, with Planck length at the origin of the chart.",
+    blurb: "Cayley map of rapidity ½ log(ℓ/ℓ_P). Inversion oddness is an extra law, not a corollary.",
   },
 ];
 
@@ -973,7 +973,7 @@ function runScale(input: RunInput, rng: () => number): Omit<RunResult, "id" | "g
       x: u,
       y: ts[i]!,
       u: ts[i]!,
-      v: -planckCompact(u),
+      v: ts[n - 1 - i]!,
     }));
     return {
       title,
@@ -998,7 +998,6 @@ function runScale(input: RunInput, rng: () => number): Omit<RunResult, "id" | "g
     const e = Math.exp(u);
     return (e - 1) / (e + 1);
   });
-  const tInvolution = us.map((u) => -planckCompact(-u));
 
   const forms = [
     pack(
@@ -1006,7 +1005,7 @@ function runScale(input: RunInput, rng: () => number): Omit<RunResult, "id" | "g
       "(ℓ − ℓ_P)/(ℓ + ℓ_P)",
       "\\dfrac{\\ell-\\ell_P}{\\ell+\\ell_P}",
       "(ell - ell_p) / (ell + ell_p)",
-      ["z = ℓ/ℓ_P", "Cayley map (z−1)/(z+1) sends 0 to −1, ℓ_P to 0, ∞ to +1"],
+      ["z = ℓ/ℓ_P, z ≠ 1", "Cayley map of rapidity η = ½ log z"],
       tMobius,
     ),
     pack(
@@ -1014,7 +1013,7 @@ function runScale(input: RunInput, rng: () => number): Omit<RunResult, "id" | "g
       "tanh(½ log(ℓ/ℓ_P))",
       "\\tanh\\tfrac12\\log(\\ell/\\ell_P)",
       "np.tanh(0.5 * np.log(ell / ell_p))",
-      ["log-Planck coordinate u = log(ℓ/ℓ_P) ∈ ℝ", "tanh(u/2) compactifies ℝ to (−1,1)"],
+      ["Identity 1: the two writings are the same function", "checked as a residual, not assumed"],
       tTanhLog,
     ),
     pack(
@@ -1030,7 +1029,7 @@ function runScale(input: RunInput, rng: () => number): Omit<RunResult, "id" | "g
       "(1 − ℓ_P/ℓ)/(1 + ℓ_P/ℓ)",
       "\\dfrac{1-\\ell_P/\\ell}{1+\\ell_P/\\ell}",
       "(1 - ell_p/ell) / (1 + ell_p/ell)",
-      ["rewrite in the inverted coordinate 1/z", "microscopic and macroscopic syntaxes agree"],
+      ["algebraic rewrite of (z−1)/(z+1)", "not the inversion law T(1/z) = −T(z)"],
       tInvRational,
     ),
     pack(
@@ -1040,14 +1039,6 @@ function runScale(input: RunInput, rng: () => number): Omit<RunResult, "id" | "g
       "(np.exp(u) - 1) / (np.exp(u) + 1)",
       ["expand tanh in exponentials", "same rational function of e^u"],
       tExp,
-    ),
-    pack(
-      "involution rewrite",
-      "T(ℓ) = −T(ℓ_P²/ℓ)",
-      "T(\\ell)=-T(\\ell_P^2/\\ell)",
-      "-T(ell_p**2 / ell)",
-      ["inversion through ℓ_P swaps 0 ↔ ∞", "the chart is odd in log-Planck radius"],
-      tInvolution,
     ),
   ];
 
@@ -1070,22 +1061,23 @@ function runScale(input: RunInput, rng: () => number): Omit<RunResult, "id" | "g
   return packGenericRun({
     input,
     familyName: "Planck chart",
-    identity: "(ℓ − ℓ_P)/(ℓ + ℓ_P) = tanh(½ log(ℓ/ℓ_P))  and  T(ℓ_P²/ℓ) = −T(ℓ)",
+    identity: "(ℓ − ℓ_P)/(ℓ + ℓ_P) = tanh(½ log(ℓ/ℓ_P))",
     identityLatex: "\\dfrac{\\ell-\\ell_P}{\\ell+\\ell_P}=\\tanh\\tfrac12\\log(\\ell/\\ell_P)",
-    blurb: "Same-physics testing of the compactification that sends microscopic 0 and macroscopic ∞ to opposite poles, with the Planck length at the origin. Inversion through ℓ_P is a sign flip on the chart.",
+    blurb: "Identity 1 only: the Cayley map of rapidity η = ½ log(ℓ/ℓ_P). Same physics means the rational and hyperbolic writings agree as functions of x = ℓ/ℓ_P > 0.",
     variants: selected,
     notes: [
-      `Samples are log-spaced in ℓ/ℓ_P from e^{−${L}} to e^{${L}}. Depth widens the window toward 0 and ∞.`,
-      "A fault drops the ½ in tanh — ∞ is then approached twice as fast, a different compactification.",
+      "Identity 1 is the suite. Reciprocal and exponential forms are algebraic rewrites of the same function.",
+      "T(ℓ_P²/ℓ) = −T(ℓ) is an extra law: it holds iff T is odd in u = log(ℓ/ℓ_P). tanh(u) without the ½ is also odd, so that law does not certify Identity 1. It is not a fold certificate.",
+      `Samples are log-spaced in ℓ/ℓ_P from e^{−${L}} to e^{${L}}. Fault drops the ½ — a different compactification.`,
     ],
     viz: "scale",
     extraMetrics: [
       {
         key: "involution",
-        label: "max |T(ℓ)+T(ℓ_P²/ℓ)|",
+        label: "extra law |T(ℓ)+T(ℓ_P²/ℓ)|",
         value: invMax,
         pass: invMax < 1e-12,
-        detail: "0 ↔ ∞ is a sign flip",
+        detail: "oddness of this T — not implied by Identity 1",
       },
       {
         key: "poles",
@@ -1376,7 +1368,7 @@ function injectFault(input: RunInput, variants: Variant[], rng: () => number): V
       if (last.grid) {
         last.grid = last.grid.map((p) => {
           const t = Math.tanh(p.x);
-          return { ...p, y: t, u: t };
+          return { ...p, y: t, u: t, v: -t };
         });
         last.samples = Float64Array.from(last.grid.map((p) => p.y));
       }

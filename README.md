@@ -22,7 +22,7 @@ dependencies). The interactive lab is the SamePhys app.
 | 05 | Discrete Laplacian | 3-point stencil ≡ Fourier multiplier ≡ cycle graph |
 | 06 | Operator ordering | Weyl(xp) = qp − [q,p]/2 = pq + [q,p]/2 |
 | 07 | Lifted shells | Whitney germs pulled back along π: W∘π_σ = W∘π_C = W∘π_H |
-| 08 | Planck chart | (ℓ−ℓ_P)/(ℓ+ℓ_P) = tanh(½ log(ℓ/ℓ_P)), and T(ℓ_P²/ℓ) = −T(ℓ) |
+| 08 | Planck chart | Identity 1: (ℓ−ℓ_P)/(ℓ+ℓ_P) = tanh(½ log(ℓ/ℓ_P)). Inversion oddness is extra, not a fold certificate. |
 
 ## Master certificate
 
