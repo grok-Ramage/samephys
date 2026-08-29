@@ -21,6 +21,8 @@ import {
   hopfComplex,
   hopfPauli,
   hopfQuaternion,
+  planckCompact,
+  planckRational,
   spin1,
   spinorPullback,
   truncatedSHO,
@@ -139,6 +141,26 @@ describe("complex / matrix primitives", () => {
       const cusp = whitneyGerm(0.3, 0.4, "cusp");
       assert.ok(Math.abs(fold.v - cusp.v) > 1e-6, "fold and cusp are different jets");
     }
+  });
+
+  it("Planck compactification: Möbius = tanh(½ log), and inversion is a sign flip", () => {
+    const rng = mulberry32(11);
+    for (let i = 0; i < 64; i++) {
+      const u = (rng() * 2 - 1) * 12;
+      const z = Math.exp(u);
+      const t = planckCompact(u);
+      nearly(t, planckRational(z), 1e-12);
+      nearly(t, Math.tanh(Math.log(z) / 2), 1e-12);
+      nearly(t, (Math.exp(u) - 1) / (Math.exp(u) + 1), 1e-12);
+      const w = 1 / z;
+      nearly(t, (1 - w) / (1 + w), 1e-12);
+      nearly(planckCompact(-u), -t, 1e-12);
+      nearly(planckRational(1 / z), -t, 1e-12);
+    }
+    nearly(planckCompact(0), 0);
+    assert.ok(planckCompact(-8) < -0.9);
+    assert.ok(planckCompact(8) > 0.9);
+    assert.ok(Math.abs(Math.tanh(1) - Math.tanh(0.5)) > 1e-3, "dropping ½ is a different map");
   });
 
   it("Weyl ordering identities on the truncated oscillator", () => {

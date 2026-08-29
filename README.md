@@ -22,6 +22,7 @@ dependencies). The interactive lab is the SamePhys app.
 | 05 | Discrete Laplacian | 3-point stencil ≡ Fourier multiplier ≡ cycle graph |
 | 06 | Operator ordering | Weyl(xp) = qp − [q,p]/2 = pq + [q,p]/2 |
 | 07 | Lifted shells | Whitney germs pulled back along π: W∘π_σ = W∘π_C = W∘π_H |
+| 08 | Planck chart | (ℓ−ℓ_P)/(ℓ+ℓ_P) = tanh(½ log(ℓ/ℓ_P)), and T(ℓ_P²/ℓ) = −T(ℓ) |
 
 ## Master certificate
 
@@ -32,7 +33,7 @@ node --experimental-strip-types --test src/math.test.ts src/engine.test.ts
 node --experimental-strip-types src/certify.mjs
 ```
 
-The shipped battery is 42 probes across all six families. Gold checks (not
+The shipped battery is 48 probes across all six families. Gold checks (not
 generator-dependent) include XY = iZ, [X,Y] = 2iZ, XYZ = iI, X² = I,
 {X,Y} = 0, the su(2) structure constants and Casimir, Hopf three-syntax
 agreement on S² with fiber invariance, and Weyl ordering on a truncated

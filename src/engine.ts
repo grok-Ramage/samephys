@@ -67,6 +67,13 @@ export const FAMILIES: FamilyMeta[] = [
     symbol: "π*W",
     blurb: "Whitney germs pulled back along the Hopf map — same jet, three π syntaxes.",
   },
+  {
+    id: "scale",
+    index: "08",
+    name: "Planck chart",
+    symbol: "ℓ_P",
+    blurb: "Microscopic 0 ↔ macroscopic ∞, with Planck length at the origin of the chart.",
+  },
 ];
 
 export function familyMeta(id: FamilyId): FamilyMeta {
@@ -945,6 +952,152 @@ function runShell(input: RunInput, rng: () => number): Omit<RunResult, "id" | "g
   });
 }
 
+/** Compactification of the log-Planck line: 0 ↦ −1, ℓ_P ↦ 0, ∞ ↦ +1. */
+export function planckCompact(u: number): number {
+  return Math.tanh(u / 2);
+}
+
+export function planckRational(z: number): number {
+  if (z <= 0 || !Number.isFinite(z)) return z > 0 ? 1 : -1;
+  return (z - 1) / (z + 1);
+}
+
+function runScale(input: RunInput, rng: () => number): Omit<RunResult, "id" | "generatedAt"> {
+  const L = 6 + 2 * input.depth;
+  const n = Math.max(48, Math.min(160, input.probes * 10));
+  const us: number[] = [];
+  for (let i = 0; i < n; i++) us.push(-L + (2 * L * i) / (n - 1));
+
+  function pack(title: string, syntax: string, latex: string, python: string, steps: string[], ts: number[]) {
+    const grid = us.map((u, i) => ({
+      x: u,
+      y: ts[i]!,
+      u: ts[i]!,
+      v: -planckCompact(u),
+    }));
+    return {
+      title,
+      syntax,
+      latex,
+      python,
+      steps,
+      samples: Float64Array.from(ts),
+      grid,
+    };
+  }
+
+  const z = us.map((u) => Math.exp(u));
+  const tCayley = us.map(planckCompact);
+  const tMobius = z.map(planckRational);
+  const tTanhLog = z.map((zi) => Math.tanh(Math.log(zi) / 2));
+  const tInvRational = z.map((zi) => {
+    const w = 1 / zi;
+    return (1 - w) / (1 + w);
+  });
+  const tExp = us.map((u) => {
+    const e = Math.exp(u);
+    return (e - 1) / (e + 1);
+  });
+  const tInvolution = us.map((u) => -planckCompact(-u));
+
+  const forms = [
+    pack(
+      "Möbius / Planck unit",
+      "(ℓ − ℓ_P)/(ℓ + ℓ_P)",
+      "\\dfrac{\\ell-\\ell_P}{\\ell+\\ell_P}",
+      "(ell - ell_p) / (ell + ell_p)",
+      ["z = ℓ/ℓ_P", "Cayley map (z−1)/(z+1) sends 0 to −1, ℓ_P to 0, ∞ to +1"],
+      tMobius,
+    ),
+    pack(
+      "hyperbolic",
+      "tanh(½ log(ℓ/ℓ_P))",
+      "\\tanh\\tfrac12\\log(\\ell/\\ell_P)",
+      "np.tanh(0.5 * np.log(ell / ell_p))",
+      ["log-Planck coordinate u = log(ℓ/ℓ_P) ∈ ℝ", "tanh(u/2) compactifies ℝ to (−1,1)"],
+      tTanhLog,
+    ),
+    pack(
+      "Cayley of the log line",
+      "tanh(u/2)  u = log(ℓ/ℓ_P)",
+      "\\tanh(u/2)",
+      "np.tanh(u/2)",
+      ["work entirely in the log chart", "same map, no intermediate z"],
+      tCayley,
+    ),
+    pack(
+      "reciprocal form",
+      "(1 − ℓ_P/ℓ)/(1 + ℓ_P/ℓ)",
+      "\\dfrac{1-\\ell_P/\\ell}{1+\\ell_P/\\ell}",
+      "(1 - ell_p/ell) / (1 + ell_p/ell)",
+      ["rewrite in the inverted coordinate 1/z", "microscopic and macroscopic syntaxes agree"],
+      tInvRational,
+    ),
+    pack(
+      "exponential",
+      "(e^u − 1)/(e^u + 1)",
+      "\\dfrac{e^u-1}{e^u+1}",
+      "(np.exp(u) - 1) / (np.exp(u) + 1)",
+      ["expand tanh in exponentials", "same rational function of e^u"],
+      tExp,
+    ),
+    pack(
+      "involution rewrite",
+      "T(ℓ) = −T(ℓ_P²/ℓ)",
+      "T(\\ell)=-T(\\ell_P^2/\\ell)",
+      "-T(ell_p**2 / ell)",
+      ["inversion through ℓ_P swaps 0 ↔ ∞", "the chart is odd in log-Planck radius"],
+      tInvolution,
+    ),
+  ];
+
+  const selected = takeForms(forms, input.count + 1, rng).map((f, i) => ({
+    id: `v${i}`,
+    title: f.title,
+    syntax: f.syntax,
+    latex: f.latex,
+    python: f.python,
+    steps: f.steps,
+    samples: f.samples,
+    grid: f.grid,
+  }));
+
+  let invMax = 0;
+  for (const u of us) invMax = Math.max(invMax, Math.abs(planckCompact(u) + planckCompact(-u)));
+  const left = tCayley[0]!;
+  const right = tCayley[tCayley.length - 1]!;
+
+  return packGenericRun({
+    input,
+    familyName: "Planck chart",
+    identity: "(ℓ − ℓ_P)/(ℓ + ℓ_P) = tanh(½ log(ℓ/ℓ_P))  and  T(ℓ_P²/ℓ) = −T(ℓ)",
+    identityLatex: "\\dfrac{\\ell-\\ell_P}{\\ell+\\ell_P}=\\tanh\\tfrac12\\log(\\ell/\\ell_P)",
+    blurb: "Same-physics testing of the compactification that sends microscopic 0 and macroscopic ∞ to opposite poles, with the Planck length at the origin. Inversion through ℓ_P is a sign flip on the chart.",
+    variants: selected,
+    notes: [
+      `Samples are log-spaced in ℓ/ℓ_P from e^{−${L}} to e^{${L}}. Depth widens the window toward 0 and ∞.`,
+      "A fault drops the ½ in tanh — ∞ is then approached twice as fast, a different compactification.",
+    ],
+    viz: "scale",
+    extraMetrics: [
+      {
+        key: "involution",
+        label: "max |T(ℓ)+T(ℓ_P²/ℓ)|",
+        value: invMax,
+        pass: invMax < 1e-12,
+        detail: "0 ↔ ∞ is a sign flip",
+      },
+      {
+        key: "poles",
+        label: "approach to ±1",
+        value: Math.max(Math.abs(left + 1), Math.abs(right - 1)),
+        pass: true,
+        detail: "ends of the window vs the infinities",
+      },
+    ],
+  });
+}
+
 function dft(x: Float64Array): { re: Float64Array; im: Float64Array } {
   const n = x.length;
   const re = new Float64Array(n);
@@ -1219,6 +1372,18 @@ function injectFault(input: RunInput, variants: Variant[], rng: () => number): V
       }
       break;
     }
+    case "scale": {
+      if (last.grid) {
+        last.grid = last.grid.map((p) => {
+          const t = Math.tanh(p.x);
+          return { ...p, y: t, u: t };
+        });
+        last.samples = Float64Array.from(last.grid.map((p) => p.y));
+      }
+      last.syntax = "tanh(log(ℓ/ℓ_P))   (no ½)";
+      last.steps.push("drop the ½ — a different compactification; ∞ is approached twice as fast");
+      break;
+    }
     default:
       for (let i = 0; i < last.samples.length; i++) last.samples[i]! *= 1 + 0.25 * rng();
   }
@@ -1352,6 +1517,9 @@ export function generateRun(input: RunInput): RunResult {
     case "shell":
       body = runShell(input, rng);
       break;
+    case "scale":
+      body = runScale(input, rng);
+      break;
     default:
       body = runPauli(input, rng);
   }
@@ -1362,7 +1530,7 @@ export function generateRun(input: RunInput): RunResult {
   };
 }
 
-export function defaultInput(family: FamilyId = "pauli"): RunInput {
+export function defaultInput(family: FamilyId = "scale"): RunInput {
   return {
     family,
     seed: 7,

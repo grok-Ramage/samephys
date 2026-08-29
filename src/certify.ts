@@ -47,6 +47,7 @@ export const CERT_PLAN: { family: FamilyId; seeds: number[] }[] = [
   { family: "laplacian", seeds: [0, 3] },
   { family: "ordering", seeds: [0, 5] },
   { family: "shell", seeds: [0, 1, 7] },
+  { family: "scale", seeds: [0, 1, 7] },
 ];
 
 export function listCertCases(): CertCase[] {
