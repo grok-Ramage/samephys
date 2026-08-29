@@ -60,6 +60,13 @@ export const FAMILIES: FamilyMeta[] = [
     symbol: "qp",
     blurb: "Weyl, qp − [q,p]/2, and pq + [q,p]/2 of the same classical symbol.",
   },
+  {
+    id: "shell",
+    index: "07",
+    name: "Lifted shells",
+    symbol: "π*W",
+    blurb: "Whitney germs pulled back along the Hopf map — same jet, three π syntaxes.",
+  },
 ];
 
 export function familyMeta(id: FamilyId): FamilyMeta {
@@ -693,6 +700,251 @@ function runFold(input: RunInput, rng: () => number): Omit<RunResult, "id" | "ge
   });
 }
 
+export function whitneyGerm(x: number, y: number, kind: "fold" | "cusp"): { u: number; v: number } {
+  if (kind === "fold") return { u: x, v: y * y };
+  return { u: x, v: y * y * y + x * y };
+}
+
+/** W ∘ π written in (z, w) without naming n. Uses the Pauli chart (n_x, n_y). */
+export function spinorPullback(p: HopfPt, kind: "fold" | "cusp"): { u: number; v: number } {
+  const a = p.zr * p.wr + p.zi * p.wi;
+  const b = p.zr * p.wi - p.zi * p.wr;
+  return whitneyGerm(2 * a, 2 * b, kind);
+}
+
+function flattenUV(pairs: { u: number; v: number }[]): Float64Array {
+  const out = new Float64Array(pairs.length * 2);
+  for (let i = 0; i < pairs.length; i++) {
+    out[2 * i] = pairs[i]!.u;
+    out[2 * i + 1] = pairs[i]!.v;
+  }
+  return out;
+}
+
+function runShell(input: RunInput, rng: () => number): Omit<RunResult, "id" | "generatedAt"> {
+  const kind: "fold" | "cusp" = input.seed % 2 === 0 ? "fold" : "cusp";
+  const n = Math.max(24, Math.min(128, input.probes * 8));
+  const pts = sampleS3(rng, n);
+  const fiberPts: HopfPt[] = pts.map((p) => {
+    const a = rng() * 2 * Math.PI;
+    const c = Math.cos(a);
+    const s = Math.sin(a);
+    return {
+      zr: c * p.zr - s * p.zi,
+      zi: s * p.zr + c * p.zi,
+      wr: c * p.wr - s * p.wi,
+      wi: s * p.wr + c * p.wi,
+    };
+  });
+
+  function pack(
+    title: string,
+    syntax: string,
+    latex: string,
+    python: string,
+    steps: string[],
+    uv: { u: number; v: number }[],
+    ns: { x: number; y: number; z: number }[],
+  ) {
+    const grid = uv.map((q, i) => ({
+      u: q.u,
+      v: q.v,
+      x: ns[i]!.x,
+      y: ns[i]!.y,
+    }));
+    return {
+      title,
+      syntax,
+      latex,
+      python,
+      steps,
+      samples: flattenUV(uv),
+      grid,
+      cloud: ns,
+    };
+  }
+
+  const nPauli = pts.map(hopfPauli);
+  const nCx = pts.map(hopfComplex);
+  const nQuat = pts.map(hopfQuaternion);
+  const nFiber = fiberPts.map(hopfPauli);
+
+  const uvPauli = nPauli.map((p) => whitneyGerm(p.x, p.y, kind));
+  const uvCx = nCx.map((p) => whitneyGerm(p.x, p.y, kind));
+  const uvQuat = nQuat.map((p) => whitneyGerm(p.x, p.y, kind));
+  const uvSpinor = pts.map((p) => spinorPullback(p, kind));
+  const uvFiber = nFiber.map((p) => whitneyGerm(p.x, p.y, kind));
+
+  const forms =
+    kind === "fold"
+      ? [
+          pack(
+            "base then lift",
+            "W₁(π_σ ψ) = (n_x, n_y²)",
+            "W_1(\\pi_\\sigma\\psi)=(n_x,n_y^2)",
+            "nx, ny**2",
+            ["Hopf via Pauli", "Whitney fold in the (n_x, n_y) chart"],
+            uvPauli,
+            nPauli,
+          ),
+          pack(
+            "complex then lift",
+            "W₁(π_C ψ)",
+            "W_1(\\pi_{\\mathbb C}\\psi)",
+            "W(hopf_complex(psi))",
+            ["Hopf via (2z w̄, |z|²−|w|²)", "same germ"],
+            uvCx,
+            nCx,
+          ),
+          pack(
+            "quaternion then lift",
+            "W₁(q i q̄)",
+            "W_1(q\\, i\\, \\bar q)",
+            "W(q * i * q.conjugate())",
+            ["Hopf via Ad_q(i)", "same germ"],
+            uvQuat,
+            nQuat,
+          ),
+          pack(
+            "spinor pullback",
+            "(2a, 4b²)  a=Re(z w̄)_σ, b=…",
+            "(2a, 4b^2)",
+            "(2*a, 4*b**2)",
+            ["expand W₁∘π in (z, w)", "no intermediate n"],
+            uvSpinor,
+            nPauli,
+          ),
+          pack(
+            "evenized pullback",
+            "(n_x, ½(n_y² + (−n_y)²))",
+            "(n_x,\\tfrac12(n_y^2+(-n_y)^2))",
+            "(nx, 0.5*(ny**2 + (-ny)**2))",
+            ["fold is even in n_y", "same polynomial"],
+            nPauli.map((p) => ({ u: p.x, v: 0.5 * (p.y * p.y + p.y * p.y) })),
+            nPauli,
+          ),
+          pack(
+            "U(1) fiber",
+            "W₁(π(e^{iα}ψ)) = W₁(πψ)",
+            "W_1(\\pi(e^{i\\alpha}\\psi))=W_1(\\pi\\psi)",
+            "W(hopf(exp(1j*a)*psi))",
+            ["phase along the Hopf fiber", "pulled-back germ is U(1)-invariant"],
+            uvFiber,
+            nFiber,
+          ),
+        ]
+      : [
+          pack(
+            "base then lift",
+            "W₂(π_σ ψ) = (n_x, n_y³ + n_x n_y)",
+            "W_2(\\pi_\\sigma\\psi)=(n_x,n_y^3+n_x n_y)",
+            "nx, ny**3 + nx*ny",
+            ["Hopf via Pauli", "Whitney cusp in the (n_x, n_y) chart"],
+            uvPauli,
+            nPauli,
+          ),
+          pack(
+            "complex then lift",
+            "W₂(π_C ψ)",
+            "W_2(\\pi_{\\mathbb C}\\psi)",
+            "W(hopf_complex(psi))",
+            ["Hopf via complex chart", "same germ"],
+            uvCx,
+            nCx,
+          ),
+          pack(
+            "quaternion then lift",
+            "W₂(q i q̄)",
+            "W_2(q\\, i\\, \\bar q)",
+            "W(q * i * q.conjugate())",
+            ["Hopf via Ad_q(i)", "same germ"],
+            uvQuat,
+            nQuat,
+          ),
+          pack(
+            "spinor pullback",
+            "(2a, 8b³ + 4ab)",
+            "(2a, 8b^3+4ab)",
+            "(2*a, 8*b**3 + 4*a*b)",
+            ["expand W₂∘π in (z, w)", "Horner in the chart coordinates is implicit"],
+            uvSpinor,
+            nPauli,
+          ),
+          pack(
+            "factored pullback",
+            "(n_x, n_y(n_y² + n_x))",
+            "(n_x, n_y(n_y^2+n_x))",
+            "(nx, ny*(ny**2 + nx))",
+            ["factor n_y from the second component"],
+            nPauli.map((p) => ({ u: p.x, v: p.y * (p.y * p.y + p.x) })),
+            nPauli,
+          ),
+          pack(
+            "U(1) fiber",
+            "W₂(π(e^{iα}ψ)) = W₂(πψ)",
+            "W_2(\\pi(e^{i\\alpha}\\psi))=W_2(\\pi\\psi)",
+            "W(hopf(exp(1j*a)*psi))",
+            ["phase along the Hopf fiber", "pulled-back germ is U(1)-invariant"],
+            uvFiber,
+            nFiber,
+          ),
+        ];
+
+  const selected = takeForms(forms, input.count + 1, rng).map((f, i) => ({
+    id: `v${i}`,
+    title: f.title,
+    syntax: f.syntax,
+    latex: f.latex,
+    python: f.python,
+    steps: f.steps,
+    samples: f.samples,
+    grid: f.grid,
+    cloud: f.cloud,
+  }));
+
+  const fiberRes = relRms(flattenUV(uvPauli), flattenUV(uvFiber));
+  const meanRad =
+    nPauli.reduce((s, p) => s + Math.abs(Math.hypot(p.x, p.y, p.z) - 1), 0) / nPauli.length;
+
+  return packGenericRun({
+    input,
+    familyName: "Lifted shells",
+    identity:
+      kind === "fold"
+        ? "W₁∘π_σ = W₁∘π_C = W₁∘π_H = W₁∘π∘e^{iα}"
+        : "W₂∘π_σ = W₂∘π_C = W₂∘π_H = W₂∘π∘e^{iα}",
+    identityLatex:
+      kind === "fold"
+        ? "W_1\\circ\\pi_{\\sigma}=W_1\\circ\\pi_{\\mathbb C}=W_1\\circ\\pi_{\\mathbb H}"
+        : "W_2\\circ\\pi_{\\sigma}=W_2\\circ\\pi_{\\mathbb C}=W_2\\circ\\pi_{\\mathbb H}",
+    blurb:
+      kind === "fold"
+        ? "Hopf-lifted Whitney fold: the germ (n_x, n_y²) pulled back along three syntaxes for π: S³ → S², plus the spinor polynomial and fiber invariance."
+        : "Hopf-lifted Whitney cusp: the germ (n_x, n_y³ + n_x n_y) pulled back along three syntaxes for π, plus the spinor polynomial and fiber invariance.",
+    variants: selected,
+    notes: [
+      "The chart is (n_x, n_y) on S². A stereographic fold is a different map — that is not this identity.",
+      "Fault swaps the jet: fold becomes cubic, cusp drops the n_x n_y term. Orientation flip on n_y is a no-op for the fold (even), so it is not the control.",
+    ],
+    viz: "lift",
+    extraMetrics: [
+      {
+        key: "fiber",
+        label: "fiber residual",
+        value: fiberRes,
+        pass: fiberRes < 1e-10,
+        detail: "W(π(e^{iα}ψ)) vs W(πψ)",
+      },
+      {
+        key: "on-sphere",
+        label: "mean |n| − 1",
+        value: meanRad,
+        pass: meanRad < 1e-10,
+      },
+    ],
+  });
+}
+
 function dft(x: Float64Array): { re: Float64Array; im: Float64Array } {
   const n = x.length;
   const re = new Float64Array(n);
@@ -944,6 +1196,29 @@ function injectFault(input: RunInput, variants: Variant[], rng: () => number): V
       last.steps.push("drop the commutator correction");
       break;
     }
+    case "shell": {
+      const kind = input.seed % 2 === 0 ? "fold" : "cusp";
+      if (last.grid) {
+        last.grid = last.grid.map((p) => ({
+          ...p,
+          v: kind === "fold" ? p.y * p.y * p.y : p.y * p.y * p.y,
+        }));
+        const s = new Float64Array(last.grid.length * 2);
+        last.grid.forEach((p, i) => {
+          s[2 * i] = p.u;
+          s[2 * i + 1] = p.v;
+        });
+        last.samples = s;
+      }
+      if (kind === "fold") {
+        last.syntax = last.syntax.replace("n_y²", "n_y³").replace("n_y^2", "n_y^3").replace("4b²", "8b³");
+        last.steps.push("replace the lifted fold by a cubic (wrong jet)");
+      } else {
+        last.syntax = last.syntax.replace("n_x n_y", "0").replace("+ 4ab", "");
+        last.steps.push("drop the n_x n_y term (wrong jet)");
+      }
+      break;
+    }
     default:
       for (let i = 0; i < last.samples.length; i++) last.samples[i]! *= 1 + 0.25 * rng();
   }
@@ -1073,6 +1348,9 @@ export function generateRun(input: RunInput): RunResult {
       break;
     case "ordering":
       body = runOrdering(input, rng);
+      break;
+    case "shell":
+      body = runShell(input, rng);
       break;
     default:
       body = runPauli(input, rng);

@@ -22,7 +22,9 @@ import {
   hopfPauli,
   hopfQuaternion,
   spin1,
+  spinorPullback,
   truncatedSHO,
+  whitneyGerm,
 } from "./engine.ts";
 
 function nearly(a: number, b: number, eps = 1e-10): void {
@@ -107,6 +109,36 @@ describe("complex / matrix primitives", () => {
     nearly(n0.x, n1.x, 1e-12);
     nearly(n0.y, n1.y, 1e-12);
     nearly(n0.z, n1.z, 1e-12);
+  });
+
+  it("Hopf-lifted fold and cusp: three π syntaxes and the spinor polynomial agree", () => {
+    const rng = mulberry32(29);
+    for (const kind of ["fold", "cusp"] as const) {
+      for (let i = 0; i < 32; i++) {
+        const a = rng() * 2 - 1;
+        const b = rng() * 2 - 1;
+        const c = rng() * 2 - 1;
+        const d = rng() * 2 - 1;
+        const nrm = Math.hypot(a, b, c, d) || 1;
+        const p = { zr: a / nrm, zi: b / nrm, wr: c / nrm, wi: d / nrm };
+        const nP = hopfPauli(p);
+        const nC = hopfComplex(p);
+        const nQ = hopfQuaternion(p);
+        const wP = whitneyGerm(nP.x, nP.y, kind);
+        const wC = whitneyGerm(nC.x, nC.y, kind);
+        const wQ = whitneyGerm(nQ.x, nQ.y, kind);
+        const wS = spinorPullback(p, kind);
+        nearly(wP.u, wC.u, 1e-12);
+        nearly(wP.v, wC.v, 1e-12);
+        nearly(wP.u, wQ.u, 1e-12);
+        nearly(wP.v, wQ.v, 1e-12);
+        nearly(wP.u, wS.u, 1e-12);
+        nearly(wP.v, wS.v, 1e-12);
+      }
+      const fold = whitneyGerm(0.3, 0.4, "fold");
+      const cusp = whitneyGerm(0.3, 0.4, "cusp");
+      assert.ok(Math.abs(fold.v - cusp.v) > 1e-6, "fold and cusp are different jets");
+    }
   });
 
   it("Weyl ordering identities on the truncated oscillator", () => {

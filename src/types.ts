@@ -6,9 +6,10 @@ export type FamilyId =
   | "hopf"
   | "fold"
   | "laplacian"
-  | "ordering";
+  | "ordering"
+  | "shell";
 
-export type VizKind = "matrix" | "cloud" | "fold" | "spectrum";
+export type VizKind = "matrix" | "cloud" | "fold" | "spectrum" | "lift";
 
 export type Variant = {
   id: string;
