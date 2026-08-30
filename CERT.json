@@ -1,0 +1,63 @@
+{
+  "title": "README CERT",
+  "verdict": "PASS",
+  "stamp": "2026-08-30T19:50Z",
+  "qid": "QID:S_q:germ:u=0:alpha=0:a2=1:Stokes=0,+/-2pi/3",
+  "vaultSha256": "d52bf61d589c038f1e0118b4ea897bad26a7644b30cfb58f99d8edb3249549d9",
+  "ownedFold": {
+    "S": "u^3/3 - alpha u",
+    "F": "u^2 - alpha",
+    "H": "2u",
+    "u": 0,
+    "alpha": 0,
+    "a1": 0,
+    "a2": 1,
+    "fold": true,
+    "claim": "quantum_fold",
+    "family": "quantum",
+    "eqgate": "ADMIT_CPU",
+    "Sigma_ReS": "empty / CLOSED_FOR_PUBLISH"
+  },
+  "quantumGenerator": {
+    "V": "x^3/3 + a x",
+    "map": "a = -alpha",
+    "foldAtZero": true,
+    "defaultCatastrophe": "cusp",
+    "defaultIsFold": false
+  },
+  "samephysMaster": {
+    "ok": true,
+    "matched": 48,
+    "total": 48
+  },
+  "equivGate": {
+    "logic": "not fold AND clean residual <= 1e-8 AND fault residual > 1e-8",
+    "ok": true,
+    "legalN": 7,
+    "total": 7,
+    "whitneyRefused": true,
+    "cases": [
+      { "family": "pauli", "seed": 1, "identity": "XY = i Z", "cleanResidual": 0, "faultResidual": 1.414213562373095, "legal": true },
+      { "family": "su2", "seed": 0, "identity": "[Jx, Jy] = i Jz", "cleanResidual": 2.2204460492503128e-16, "faultResidual": 2, "legal": true },
+      { "family": "hopf", "seed": 7, "identity": "pi_Pauli = pi_C = pi_H", "cleanResidual": 1.8218106909375956e-16, "faultResidual": 1.0685648767968527, "legal": true },
+      { "family": "laplacian", "seed": 0, "identity": "Delta_stencil = Delta_Fourier = -L_cycle on Z16", "cleanResidual": 1.4622710540565056e-15, "faultResidual": 0.2224970797449924, "legal": true },
+      { "family": "ordering", "seed": 0, "identity": "Weyl(xp) = qp - [q,p]/2 = pq + [q,p]/2", "cleanResidual": 0, "faultResidual": 0.44721359549995804, "legal": true },
+      { "family": "shell", "seed": 0, "identity": "W1 o pi_sigma = W1 o pi_C = W1 o pi_H", "cleanResidual": 2.0534961913228911e-16, "faultResidual": 0.7649808441620162, "legal": true },
+      { "family": "scale", "seed": 7, "identity": "(ell - ell_P)/(ell + ell_P) = tanh(1/2 log(ell/ell_P))", "cleanResidual": 7.969418396230559e-17, "faultResidual": 0.1056837963921274, "legal": true }
+    ]
+  },
+  "refused": [
+    "Hopf as Hess ReS fold (G4)",
+    "restencil 24D window eps in [3.3, 5] (G3)",
+    "Lorentz coherent hunt fold (G4)",
+    "a1 + q_c mix (G0)",
+    "S_q + GPU (G5)",
+    "Whitney germ on equivGate"
+  ],
+  "notClaimed": [
+    "replacement of Einstein field equations",
+    "physical spacetime singularity theorem",
+    "Sigma_ReS nonempty",
+    "production 24D S"
+  ]
+}

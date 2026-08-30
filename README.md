@@ -1,5 +1,7 @@
 # SamePhys
 
+**Cross-desk [README CERT](./README.CERT.md) (stamp 2026-08-30T19:50Z): PASS.** Owned fold \(S_q\) at \((0,0)\). equivGate 7/7. Master certificate 48/48. \(\Sigma_{\mathrm{ReS}}\) not found.
+
 Same-physics testing of operator syntax.
 
 Two presentations encode the same physics when they agree on every admissible
