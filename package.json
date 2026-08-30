@@ -6,8 +6,9 @@
   "license": "MIT",
   "description": "Same-physics testing of operator syntax — generate equivalent forms and falsify equivalence.",
   "scripts": {
-    "test": "node --experimental-strip-types --test src/math.test.ts src/engine.test.ts",
-    "certify": "node --experimental-strip-types src/certify.mjs"
+    "test": "node --experimental-strip-types --test src/math.test.ts src/engine.test.ts src/equiv-gate.test.ts",
+    "certify": "node --experimental-strip-types src/certify.mjs",
+    "equiv-gate": "node --experimental-strip-types src/equiv-gate.mjs"
   },
   "engines": {
     "node": ">=22"

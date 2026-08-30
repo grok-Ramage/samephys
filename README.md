@@ -33,11 +33,26 @@ node --experimental-strip-types --test src/math.test.ts src/engine.test.ts
 node --experimental-strip-types src/certify.mjs
 ```
 
-The shipped battery is 48 probes across all six families. Gold checks (not
+The shipped battery is 48 probes across all eight families. Gold checks (not
 generator-dependent) include XY = iZ, [X,Y] = 2iZ, XYZ = iI, X² = I,
 {X,Y} = 0, the su(2) structure constants and Casimir, Hopf three-syntax
 agreement on S² with fiber invariance, and Weyl ordering on a truncated
 oscillator.
+
+## Equivalence logic gate
+
+Legal same-physics that is **not a fold**:
+
+```
+legal ≡ ¬fold ∧ (clean residual ≤ 10⁻⁸) ∧ (fault residual > 10⁻⁸)
+```
+
+Families 01–03 and 05–08 sit on this gate. Family 04 (Whitney fold/cusp) is a
+fold chart — `foldGate`, not `equivGate`.
+
+```bash
+node --experimental-strip-types src/equiv-gate.mjs
+```
 
 ## Use
 
